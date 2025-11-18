@@ -1,0 +1,7 @@
+gradio
+huggingface_hub
+python-dotenv
+openai
+edge-tts
+openai-whisper
+gtts

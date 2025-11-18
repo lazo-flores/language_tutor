@@ -1,0 +1,15 @@
+[project]
+name = "apertus"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "edge-tts>=7.2.3",
+    "gradio>=5.49.1",
+    "gtts>=2.5.4",
+    "huggingface-hub>=1.1.4",
+    "openai>=2.8.0",
+    "openai-whisper>=20250625",
+    "python-dotenv>=1.2.1",
+]
