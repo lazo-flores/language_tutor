@@ -1,3 +1,9 @@
+---
+title: Language_Tutor
+app_file: language_tutor.py
+sdk: gradio
+sdk_version: 5.49.1
+---
 # 🌍 Language Tutor - AI-Powered Multilingual Learning
 
 An AI-powered conversational chatbot designed to help users practice speaking foreign languages in an interactive, adaptive environment. Powered by the **Apertus-70B-Instruct-2509** model, which is trained on 1000+ languages, this application provides immersive language learning with voice support.
