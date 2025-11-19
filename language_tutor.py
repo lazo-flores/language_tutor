@@ -410,4 +410,4 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
 # Launch the app
 if __name__ == "__main__":
-    demo.launch(share=False)
+    demo.launch(share=True, inbrowser=True)
