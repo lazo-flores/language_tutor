@@ -193,9 +193,9 @@ def process_voice_input(audio, stt_provider_name):
 
 # Create Gradio interface
 with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(primary_hue="indigo")) as demo:
-    gr.Markdown("# 🌍 Language Tutor powered by Apertus-70B")
-    gr.Markdown(f"Practice any language with an AI tutor powered by **{model_name}** - trained on 1000+ languages!")
-    gr.Markdown("⚠️ **Note**: You may need a Hugging Face token for API access. Set it with `huggingface-cli login` or pass it to InferenceClient.")
+    gr.Markdown("# 🌍 Language Tutor")
+    gr.Markdown(f"Practice any language with an AI tutor powered by **Swiss AI {short_model_name}** - trained on 1000+ languages!")
+    # gr.Markdown("⚠️ **Note**: You may need a Hugging Face token for API access. Set it with `huggingface-cli login` or pass it to InferenceClient.")
     
     with gr.Row():
         with gr.Column(scale=3):
@@ -213,14 +213,14 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
             # Voice input section
             with gr.Row():
-                with gr.Column(scale=4):
-                    voice_input = gr.Audio(
-                        sources=["microphone"],
-                        type="filepath",
-                        label="Voice Input (Click to Record)"
+                voice_input = gr.Audio(
+                    sources=["microphone"],
+                    type="filepath",
+                    label="Voice Input (Recording auto-transcribes when you stop)",
+                    waveform_options=gr.WaveformOptions(
+                        show_controls=False
                     )
-                with gr.Column(scale=1):
-                    transcribe_btn = gr.Button("Transcribe", variant="secondary")
+                )
 
             # Voice output section
             voice_output = gr.Audio(
@@ -243,7 +243,7 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
             target_language = gr.Dropdown(
                 choices=get_available_languages(),
-                value="Spanish",
+                value="German",
                 label="Language to Practice",
                 info="Language you want to learn"
             )
@@ -252,38 +252,10 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
                 label="System Prompt (Auto-generated)",
                 placeholder="System prompt is automatically generated based on language selection...",
                 lines=5,
-                value=create_language_tutor_prompt("English", "Spanish"),
+                value=create_language_tutor_prompt("English", "German"),
                 interactive=True,
-                info="You can customize this if needed"
-            )
-            
-            gr.Markdown("### Generation Parameters")
-            
-            max_tokens = gr.Slider(
-                minimum=50,
-                maximum=2048,
-                value=512,
-                step=50,
-                label="Max Tokens",
-                info="Maximum length of the response"
-            )
-            
-            temperature = gr.Slider(
-                minimum=0.0,
-                maximum=2.0,
-                value=0.7,
-                step=0.1,
-                label="Temperature",
-                info="Higher = more creative, Lower = more focused"
-            )
-            
-            top_p = gr.Slider(
-                minimum=0.0,
-                maximum=1.0,
-                value=0.9,
-                step=0.05,
-                label="Top P",
-                info="Nucleus sampling threshold"
+                info="You can customize this if needed",
+                visible=False  # Hidden from UI, but still functional in backend
             )
 
             gr.Markdown("### Voice Settings")
@@ -303,7 +275,7 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
             enable_voice_output = gr.Checkbox(
                 label="Enable Voice Output (TTS)",
-                value=False,
+                value=True,
                 info="Convert responses to speech"
             )
 
@@ -315,10 +287,39 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
             )
 
             tts_voice = gr.Dropdown(
-                choices=get_voices_for_provider(VoiceConfig.DEFAULT_TTS, get_language_code("Spanish")),
-                value=get_default_voice_for_language("Spanish", VoiceConfig.DEFAULT_TTS),
+                choices=get_voices_for_provider(VoiceConfig.DEFAULT_TTS, get_language_code("German")),
+                value=get_default_voice_for_language("German", VoiceConfig.DEFAULT_TTS),
                 label="TTS Voice",
                 info="Voice automatically matched to target language"
+            )
+
+            gr.Markdown("### Generation Parameters")
+
+            max_tokens = gr.Slider(
+                minimum=50,
+                maximum=2048,
+                value=512,
+                step=50,
+                label="Max Tokens",
+                info="Maximum length of the response"
+            )
+
+            temperature = gr.Slider(
+                minimum=0.0,
+                maximum=2.0,
+                value=0.7,
+                step=0.1,
+                label="Temperature",
+                info="Higher = more creative, Lower = more focused"
+            )
+
+            top_p = gr.Slider(
+                minimum=0.0,
+                maximum=1.0,
+                value=0.9,
+                step=0.05,
+                label="Top P",
+                info="Nucleus sampling threshold"
             )
     
     # Event handlers
@@ -367,8 +368,15 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
         outputs=[msg, chatbot, voice_output]
     )
 
-    # Voice input transcription
-    transcribe_btn.click(
+    # Automatic voice input transcription when recording stops
+    voice_input.stop_recording(
+        process_voice_input,
+        inputs=[voice_input, stt_provider],
+        outputs=[msg]
+    )
+
+    # Also trigger on audio change (for uploaded files)
+    voice_input.change(
         process_voice_input,
         inputs=[voice_input, stt_provider],
         outputs=[msg]
