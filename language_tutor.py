@@ -37,22 +37,31 @@ def format_messages(message, chat_history, system_prompt):
     return messages
 
 
-def create_language_tutor_prompt(native_language, target_language):
+def create_language_tutor_prompt(native_language, target_language, enable_translations=True):
     """
     Create a system prompt for the language tutor based on native and target languages.
 
     Args:
         native_language: User's native language
         target_language: Language the user wants to learn
+        enable_translations: Whether to include native language translations
 
     Returns:
         System prompt string
     """
+    translation_guidance = ""
+    if enable_translations:
+        translation_guidance = f"""- Provide {native_language} translations when the user seems confused or asks for help
+- Include {native_language} explanations in parentheses when helpful"""
+    else:
+        translation_guidance = f"""- Keep responses entirely in {target_language} for full immersion
+- Only use {native_language} if the user explicitly asks for translation or clarification"""
+
     prompt = f"""You are an expert language tutor helping a {native_language} speaker learn {target_language}.
 
 Your role:
 - Respond primarily in {target_language} to provide immersive practice
-- Provide {native_language} translations when the user seems confused or asks for help
+{translation_guidance}
 - Correct mistakes gently and explain grammar rules when appropriate
 - Adjust your vocabulary and sentence complexity based on the user's level
 - Ask engaging questions to encourage conversation practice
@@ -62,7 +71,6 @@ Your role:
 Guidelines:
 - Keep responses conversational and natural
 - Use {target_language} for the main response
-- Include {native_language} explanations in parentheses when helpful
 - Praise progress and provide constructive feedback
 - Adapt difficulty based on the user's responses
 
@@ -248,11 +256,17 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
                 info="Language you want to learn"
             )
 
+            enable_translations = gr.Checkbox(
+                label="Enable Native Language Hints",
+                value=True,
+                info="Show translations and explanations in your native language (in parentheses)"
+            )
+
             system_prompt = gr.Textbox(
                 label="System Prompt (Auto-generated)",
                 placeholder="System prompt is automatically generated based on language selection...",
                 lines=5,
-                value=create_language_tutor_prompt("English", "German"),
+                value=create_language_tutor_prompt("English", "German", True),
                 interactive=True,
                 info="You can customize this if needed",
                 visible=False  # Hidden from UI, but still functional in backend
@@ -324,19 +338,25 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
     
     # Event handlers
 
-    # Update system prompt when languages change
-    def update_system_prompt(native_lang, target_lang):
-        return create_language_tutor_prompt(native_lang, target_lang)
+    # Update system prompt when languages or translation setting changes
+    def update_system_prompt(native_lang, target_lang, enable_trans):
+        return create_language_tutor_prompt(native_lang, target_lang, enable_trans)
 
     native_language.change(
         update_system_prompt,
-        inputs=[native_language, target_language],
+        inputs=[native_language, target_language, enable_translations],
         outputs=[system_prompt]
     )
 
     target_language.change(
         update_system_prompt,
-        inputs=[native_language, target_language],
+        inputs=[native_language, target_language, enable_translations],
+        outputs=[system_prompt]
+    )
+
+    enable_translations.change(
+        update_system_prompt,
+        inputs=[native_language, target_language, enable_translations],
         outputs=[system_prompt]
     )
 
