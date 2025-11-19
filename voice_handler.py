@@ -142,8 +142,8 @@ class VoiceConfig:
 
     # Default selections
     DEFAULT_STT = "OpenAI Whisper API"
-    DEFAULT_TTS = "Edge-TTS (Free)"
-    DEFAULT_TTS_VOICE = "en-US-JennyNeural"
+    DEFAULT_TTS = "gTTS (Free)"  # More reliable on cloud platforms like HF Spaces
+    DEFAULT_TTS_VOICE = "default"
     DEFAULT_LANGUAGE = "English"
 
 
