@@ -199,6 +199,22 @@ def process_voice_input(audio, stt_provider_name):
     transcribed_text = transcribe_audio(audio, stt_provider_name)
     return transcribed_text
 
+
+def clear_voice_input_if_enabled(auto_clear):
+    """
+    Clear the voice input component if auto-clear is enabled.
+
+    Args:
+        auto_clear: Boolean indicating if auto-clear is enabled
+
+    Returns:
+        None if auto-clear is enabled (clears the audio), otherwise gr.update() to keep it
+    """
+    if auto_clear:
+        return None
+    else:
+        return gr.update()
+
 # Create Gradio interface
 with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(primary_hue="indigo")) as demo:
     gr.Markdown("# 🌍 Language Tutor")
@@ -285,6 +301,11 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
                 value=VoiceConfig.DEFAULT_STT,
                 label="Speech-to-Text Provider",
                 info="Choose quality/cost tier"
+            )
+
+            auto_clear_recording = gr.Checkbox(
+                label="Auto-clear recording after transcription",
+                value=True
             )
 
             enable_voice_output = gr.Checkbox(
@@ -388,14 +409,24 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
         outputs=[msg, chatbot, voice_output]
     )
 
-    # Automatic voice input transcription when recording stops
+    # Automatic voice input transcription when recording stops, then auto-send to LLM
     voice_input.stop_recording(
         process_voice_input,
         inputs=[voice_input, stt_provider],
         outputs=[msg]
+    ).then(
+        chat,
+        inputs=[msg, chatbot, system_prompt, max_tokens, temperature, top_p,
+                enable_voice_output, tts_provider, tts_voice, target_language],
+        outputs=[msg, chatbot, voice_output]
+    ).then(
+        clear_voice_input_if_enabled,
+        inputs=[auto_clear_recording],
+        outputs=[voice_input]
     )
 
-    # Also trigger on audio change (for uploaded files)
+    # Also trigger transcription on audio change (for uploaded files)
+    # Note: No auto-send here to avoid duplicate calls when stop_recording fires
     voice_input.change(
         process_voice_input,
         inputs=[voice_input, stt_provider],
