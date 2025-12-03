@@ -16,8 +16,8 @@ from voice_handler import (
 load_dotenv(override=True)
 
 # Initialize the Hugging Face Inference Client
-model_name = "swiss-ai/Apertus-70B-Instruct-2509"
-short_model_name = "Apertus-70B-Instruct"
+model_name = "swiss-ai/Apertus-8B-Instruct-2509"
+short_model_name = "Apertus-8B-Instruct"
 client = InferenceClient(model=model_name)
 
 def format_messages(message, chat_history, system_prompt):
