@@ -305,7 +305,8 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
             auto_clear_recording = gr.Checkbox(
                 label="Auto-clear recording after transcription",
-                value=True
+                value=True,
+                info="Remove check to enable playback. Enables you to play the recording and listen to your pronunciation"
             )
 
             enable_voice_output = gr.Checkbox(
