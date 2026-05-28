@@ -1,3 +1,5 @@
+import os
+
 import gradio as gr
 from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
@@ -442,4 +444,5 @@ with gr.Blocks(title="Language Tutor with Apertus-70B", theme=gr.themes.Glass(pr
 
 # Launch the app
 if __name__ == "__main__":
-    demo.launch(share=False, inbrowser=True)
+    on_hf_spaces = bool(os.environ.get("SPACE_ID"))
+    demo.launch(share=False, inbrowser=not on_hf_spaces)
