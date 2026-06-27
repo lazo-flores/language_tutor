@@ -6,25 +6,28 @@ sdk_version: 5.49.1
 ---
 # 🌍 Language Tutor - AI-Powered Multilingual Learning
 
-An AI-powered conversational chatbot designed to help users practice speaking foreign languages in an interactive, adaptive environment. Powered by the **Apertus-70B-Instruct-2509** model, which is trained on 1000+ languages, this application provides immersive language learning with voice support.
+An AI-powered conversational chatbot designed to help users practice speaking foreign languages in an interactive, adaptive environment. Powered by Google's **Gemini 3.5 Flash** model via its OpenAI-compatible API, this application provides immersive language learning with grammar feedback and voice support.
 
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
+![Python](https://img.shields.io/badge/python-3.13+-blue.svg)
 ![Gradio](https://img.shields.io/badge/Gradio-UI-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 🆕 What's New
 
-- **Auto-Transcription:** Voice recordings automatically transcribe when you stop - no extra button needed!
+- **Hands-Free Voice:** Click the mic once and just talk — speech is detected, and when you pause it auto-transcribes and sends. No Stop button.
+- **Grammar Feedback:** The tutor corrects grammar, word choice, and phrasing on every turn.
+- **Spoken Conversation:** The voice response reads only the conversational reply (corrections stay on screen) — toggle "Read correction notes aloud" to include them.
 - **Translation Control:** Toggle native language hints on/off for immersive or assisted learning
 - **German Default:** Application now defaults to German language learning
-- **Streamlined UI:** Organized settings (Language → Voice → Parameters) for better user flow
+- **Collapsible Settings:** Language, Voice, and Generation panels collapse to keep the UI clean
 
 ## ✨ Features
 
 - 🗣️ **30+ Supported Languages** - Practice any of 30 major world languages
 - 🎯 **Personalized Learning** - Select your native language and target language
-- 🤖 **AI Tutor** - Powered by Apertus-70B, trained on 1000+ languages
-- 🎤 **Auto-Transcription** - Voice input automatically transcribes when you stop recording
+- 🤖 **AI Tutor** - Powered by Google Gemini 3.5 Flash
+- 📝 **Grammar Feedback** - Corrects grammar, word choice, and phrasing every turn
+- 🎤 **Hands-Free Voice** - Talk naturally; it detects when you pause, then transcribes and sends automatically
 - 🔊 **Voice Output (TTS)** - Hear responses with native pronunciation
 - 🌐 **Multilingual Voices** - Automatic voice matching for target language
 - 📝 **Smart Prompts** - Auto-generated teaching prompts based on language pair
@@ -83,29 +86,29 @@ The application supports 30 languages with native TTS voices:
 
 ## 🏗️ Architecture
 
-The application consists of three main components:
+The application consists of four main components:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │           Gradio Web Interface (UI)             │
 │  - Language Selection                           │
 │  - Chat Interface                               │
-│  - Voice Controls                               │
+│  - Hands-free Voice Controls                     │
 └─────────────────────┬───────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────┐
 │        Language Tutor Core (language_tutor.py)  │
 │  - Message Formatting                           │
 │  - System Prompt Generation                     │
-│  - Hugging Face API Integration                 │
-└─────────────────────┬───────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────┐
-│        Voice Handler (voice_handler.py)         │
-│  - STT Providers (Whisper, Local)               │
-│  - TTS Providers (Edge-TTS, OpenAI, gTTS)       │
-│  - Language/Voice Mapping                       │
-└─────────────────────────────────────────────────┘
+│  - Gemini API Integration (OpenAI-compatible)   │
+└──────────┬──────────────────────────┬───────────┘
+           │                          │
+┌──────────▼─────────────┐  ┌─────────▼────────────┐
+│  VAD (vad_handler.py)  │  │ Voice (voice_handler)│
+│  - silero-vad streaming│  │ - STT (Whisper/Local)│
+│  - end-of-speech detect│  │ - TTS (Edge/OpenAI/  │
+│  - silence/noise gate  │  │   gTTS)              │
+└────────────────────────┘  └──────────────────────┘
 ```
 
 ## 📦 Requirements
@@ -113,21 +116,23 @@ The application consists of three main components:
 ### System Requirements
 
 - **UV** - Fast Python package manager (installation instructions below)
-- Python 3.8 or higher (UV will manage this)
-- Internet connection (for Hugging Face API and cloud TTS/STT)
+- Python 3.13 or higher (UV will manage this)
+- Internet connection (for Gemini API and cloud TTS/STT)
 - Microphone (optional, for voice input)
 - Speakers/Headphones (optional, for voice output)
 
 ### Python Dependencies
 
 ```
-gradio>=4.0.0
-huggingface_hub>=0.19.0
+gradio>=5.49.1
 python-dotenv>=1.0.0
-openai>=1.0.0
-edge-tts>=6.1.0
-openai-whisper>=20231117
-gtts>=2.5.0
+openai>=2.8.0
+edge-tts>=7.2.3
+openai-whisper>=20250625
+gtts>=2.5.4
+silero-vad>=6.0.0
+torch==2.9.1          # pinned as a matching pair with torchaudio
+torchaudio==2.9.1
 ```
 
 ## 🚀 Installation
@@ -181,22 +186,19 @@ uv sync
 Create a `.env` file in the project root:
 
 ```bash
-# Hugging Face API Token (required)
-HF_TOKEN=your_huggingface_token_here
+# Google Gemini API Key (required for the tutor LLM)
+GOOGLE_API_KEY=your_gemini_api_key_here
 
-# OpenAI API Key (optional, only if using OpenAI providers)
+# OpenAI API Key (optional, only if using OpenAI Whisper STT or OpenAI TTS)
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-**Getting a Hugging Face Token:**
-1. Visit https://huggingface.co/settings/tokens
-2. Create a new token with "Read" access
-3. Copy the token to your `.env` file
+**Getting a Google Gemini API Key:**
+1. Visit https://aistudio.google.com/apikey
+2. Create an API key (the free tier is sufficient for practice use)
+3. Copy the key into your `.env` file as `GOOGLE_API_KEY`
 
-Or use the CLI:
-```bash
-huggingface-cli login
-```
+The app reads `GOOGLE_API_KEY` (and also accepts `GEMINI_API_KEY` as a fallback).
 
 ## ⚙️ Configuration
 
@@ -288,16 +290,18 @@ The application will launch a web interface at `http://127.0.0.1:7860`
    - The system prompt auto-generates based on your selections
 
 2. **Configure Voice Settings** (Optional)
-   - Enable Voice Input (STT) - recording auto-transcribes when you stop
+   - Enable Voice Input (STT) — hands-free: it auto-sends when you pause
    - Enable Voice Output (TTS) to hear responses
+   - Optionally enable "Read correction notes aloud" (off by default — the voice otherwise speaks only the conversation)
    - Select preferred voice provider and voice style
    - Voice automatically matches your target language
 
 3. **Start Learning**
-   - Type your message or click the microphone to record
-   - Voice recordings auto-transcribe when you stop (no extra button needed)
+   - Type your message, or click the microphone once and just talk
+   - When you pause, your speech is transcribed and sent automatically — no Stop button
    - The AI tutor responds primarily in the target language
    - Receive corrections, explanations, and cultural context
+   - Tip: tap play on the voice response once per session to unlock automatic playback (a browser requirement)
 
 4. **Customize Your Experience**
    - Toggle native language hints for full immersion or beginner support
@@ -345,17 +349,18 @@ Main application file containing the Gradio interface and core logic.
 
 **Key Functions:**
 
-- `create_language_tutor_prompt(native_language, target_language, enable_translations)` - Generates intelligent system prompts with optional translation hints
+- `create_language_tutor_prompt(native_language, target_language, enable_translations)` - Generates the system prompt (structured corrections + `---` separator + conversation)
 - `format_messages(message, chat_history, system_prompt)` - Formats conversation for the LLM
-- `transcribe_audio(audio_path, stt_provider_name)` - Converts speech to text (auto-triggered on recording stop)
+- `transcribe_audio(audio_path, stt_provider_name, language=None)` - Converts speech to text, constrained to the practice language
 - `synthesize_speech(text, tts_provider_name, tts_voice, target_language)` - Converts text to speech with language awareness
-- `chat(...)` - Main chat function that handles LLM inference
+- `chat(...)` - Streams the LLM reply (Gemini) and synthesizes the spoken response
+- `vad_stream(...)` - The mic `.stream` handler: runs voice-activity detection and auto-sends on a pause
+- `split_corrections_and_conversation(text)` / `clean_text_for_tts(text)` - Decide and sanitize what gets read aloud
 - `update_voice_dropdown(tts_provider_name, target_language)` - Dynamically updates voice options
-- `process_voice_input(audio, stt_provider_name)` - Processes and transcribes voice input automatically
 
-**UI Organization:**
+**UI Organization (collapsible accordions):**
 - **Language Settings** - Native language, target language (default: German), translation hints toggle
-- **Voice Settings** - STT/TTS providers with auto-transcription and language-matched voices
+- **Voice Settings** - STT/TTS providers, hands-free voice input, language-matched voices, "read corrections aloud"
 - **Generation Parameters** - Advanced AI tuning options (temperature, tokens, top-p)
 
 #### `voice_handler.py`
@@ -381,6 +386,15 @@ Voice processing module with STT/TTS provider implementations.
 - `create_stt_provider(provider_name)` - Factory for STT providers
 - `create_tts_provider(provider_name, voice, language)` - Factory for TTS providers
 
+#### `vad_handler.py`
+Streaming voice-activity detection (silero-vad) that powers hands-free input.
+
+**Key pieces:**
+
+- `StreamingVAD` - Per-session accumulator: feed it mic chunks via `add_chunk()`, it returns a finished utterance when it detects speech followed by a pause
+- `save_wav(audio, sr)` - Writes a finished utterance to a temp WAV for the STT provider
+- Tuning constants (top of file) - `SILENCE_HANG_MS`, `SPEECH_THRESHOLD`, and the `MIN_PEAK_PROB`/`MIN_RMS` energy gate that keeps silence/noise from reaching Whisper
+
 ### Configuration Files
 
 - `requirements.txt` - Python dependencies for pip/uv compatibility
@@ -390,20 +404,20 @@ Voice processing module with STT/TTS provider implementations.
 
 ## 🔌 API Providers
 
-### Hugging Face Inference API
+### Google Gemini API
 
-The application uses the Hugging Face Inference API to access the **Apertus-70B-Instruct-2509** model.
+The application uses Google's Gemini API (via its OpenAI-compatible endpoint) to access the **Gemini 3.5 Flash** model.
 
 **Model Info:**
-- **Name:** swiss-ai/Apertus-70B-Instruct-2509
-- **Size:** 70B parameters
-- **Training:** 1000+ languages
-- **Context:** Supports long conversations
-- **Hosting:** Hugging Face Inference Endpoints
+- **Name:** gemini-3.5-flash
+- **Provider:** Google AI (Generative Language API)
+- **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/openai/`
+- **Context:** 1M-token context window
+- **Strengths:** Fast, strong multilingual conversation
 
 **Rate Limits:**
-- Free tier: Limited requests per hour
-- Pro tier: Higher rate limits available
+- Free tier: generous daily request and token-per-minute limits
+- Paid tier: higher limits available (see Google AI Studio)
 
 ### Voice Provider APIs
 
@@ -429,13 +443,18 @@ pip install uv
 uv --version
 ```
 
-**Issue: "Hugging Face token not found"**
+**Issue: "Please pass a valid API key" / 400 INVALID_ARGUMENT**
 ```bash
-# Solution 1: Set in .env file
-echo "HF_TOKEN=your_token_here" > .env
+# The Gemini key is missing or misnamed in .env.
+# Set it in .env file (variable name must be GOOGLE_API_KEY):
+echo "GOOGLE_API_KEY=your_gemini_api_key_here" >> .env
+# Get a key at https://aistudio.google.com/apikey
+```
 
-# Solution 2: Use CLI login
-huggingface-cli login
+**Issue: "402 Payment Required"**
+```text
+This came from the old Hugging Face backend. The app now uses Google Gemini —
+make sure GOOGLE_API_KEY is set and you're not on a stale HF-based build.
 ```
 
 **Issue: "OpenAI API key required"**
@@ -445,9 +464,9 @@ echo "OPENAI_API_KEY=your_key_here" >> .env
 ```
 
 **Issue: "Model loading failed" or "Rate limit exceeded"**
-- Wait a few minutes and try again
-- Check your Hugging Face token is valid
-- Consider using a Pro account for higher limits
+- Wait a few minutes and try again (the free tier has per-minute limits)
+- Check your `GOOGLE_API_KEY` is valid
+- Consider a paid Gemini tier for higher limits
 
 **Issue: "Voice not working"**
 - Check internet connection (Edge-TTS and gTTS require internet)
@@ -479,8 +498,8 @@ logging.basicConfig(level=logging.DEBUG)
    - **Advanced:** Disable for full immersion practice
 3. **Be Consistent:** Practice regularly, even if just 10-15 minutes daily
 4. **Use Voice Features:** Enable both STT and TTS to practice speaking and listening
-   - Record yourself speaking in the target language
-   - Auto-transcription helps you see what you said
+   - Speak hands-free; it transcribes when you pause so you can see what you said
+   - Replay "Your last recording" to hear your own pronunciation
    - Listen to native pronunciation with TTS
 5. **Ask Questions:** Request grammar explanations when confused
 6. **Progressive Learning:** Start with hints, gradually disable them as you improve
@@ -488,7 +507,7 @@ logging.basicConfig(level=logging.DEBUG)
 ### For Best Performance
 
 1. **Use Edge-TTS:** Free and high-quality for most languages with regional variants
-2. **Auto-Transcription:** Recordings automatically transcribe - no extra button needed
+2. **Hands-Free Voice:** Click the mic once and talk; it auto-sends when you pause
 3. **Voice Settings:** STT and TTS automatically match your target language
 4. **Adjust Token Limits:** Lower max_tokens (256-512) for faster, more concise responses
 5. **Monitor Costs:** Track API usage if using paid providers (OpenAI Whisper/TTS)
@@ -498,13 +517,13 @@ logging.basicConfig(level=logging.DEBUG)
 ### Free Configuration (Recommended)
 - **STT:** Local Whisper (Tiny or Base)
 - **TTS:** Edge-TTS or gTTS
-- **LLM:** Hugging Face (Free tier)
+- **LLM:** Google Gemini (Free tier)
 - **Total:** $0/month ✅
 
 ### Paid Configuration (Premium Quality)
 - **STT:** OpenAI Whisper API (~$0.006/minute)
 - **TTS:** OpenAI TTS (~$0.015/1K chars)
-- **LLM:** Hugging Face (Free or Pro)
+- **LLM:** Google Gemini (Free tier, or paid for higher limits)
 - **Example:** 10 hours/month ≈ $3.60 STT + ~$5 TTS = ~$8.60/month
 
 ## 🤝 Contributing
@@ -528,10 +547,10 @@ This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- **Apertus-70B** by Swiss AI Lab - Multilingual LLM
+- **Gemini 3.5 Flash** by Google - Multilingual LLM
 - **UV** by Astral - Fast Python package manager
 - **Gradio** - Web interface framework
-- **Hugging Face** - Model hosting and inference
+- **Google AI** - Gemini model and inference API
 - **Edge-TTS** - Free multilingual text-to-speech
 - **OpenAI Whisper** - Speech recognition
 

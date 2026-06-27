@@ -1,7 +1,10 @@
 gradio
-huggingface_hub
 python-dotenv
 openai
 edge-tts
 openai-whisper
 gtts
+silero-vad
+# torch/torchaudio must be a matching pair (silero-vad pulls torchaudio)
+torch==2.9.1
+torchaudio==2.9.1

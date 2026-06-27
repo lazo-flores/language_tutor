@@ -6,6 +6,7 @@ with multiple provider options for different cost/quality tiers.
 
 import os
 import tempfile
+import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, List, Dict
@@ -155,12 +156,13 @@ class STTProvider(ABC):
     """Abstract base class for Speech-to-Text providers."""
 
     @abstractmethod
-    def transcribe(self, audio_path: str) -> str:
+    def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         """
         Transcribe audio file to text.
 
         Args:
             audio_path: Path to audio file
+            language: Optional ISO-639-1 code (e.g. "de") to constrain detection
 
         Returns:
             Transcribed text
@@ -205,13 +207,18 @@ class OpenAIWhisperSTT(STTProvider):
 
         self.client = OpenAI(api_key=self.api_key)
 
-    def transcribe(self, audio_path: str) -> str:
+    def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         """Transcribe audio using OpenAI Whisper API."""
         try:
+            kwargs = {"model": "whisper-1"}
+            if language:
+                # Constrain detection to the practice language so Whisper doesn't
+                # mis-detect (and hallucinate) on short or accented utterances.
+                kwargs["language"] = language
             with open(audio_path, "rb") as audio_file:
                 transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file
+                    file=audio_file,
+                    **kwargs
                 )
             return transcript.text
         except Exception as e:
@@ -236,11 +243,11 @@ class LocalWhisperSTT(STTProvider):
         if self.model is None:
             self.model = whisper.load_model(self.model_size)
 
-    def transcribe(self, audio_path: str) -> str:
+    def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         """Transcribe audio using local Whisper model."""
         self._load_model()
         try:
-            result = self.model.transcribe(audio_path)
+            result = self.model.transcribe(audio_path, language=language)
             return result["text"]
         except Exception as e:
             raise Exception(f"Local Whisper transcription failed: {str(e)}")
@@ -260,7 +267,7 @@ class EdgeTTSProvider(TTSProvider):
         """Synthesize speech using Edge TTS."""
 
         if output_path is None:
-            output_path = os.path.join(tempfile.gettempdir(), f"tts_{os.getpid()}.mp3")
+            output_path = os.path.join(tempfile.gettempdir(), f"tts_{uuid.uuid4().hex}.mp3")
 
         try:
             # Edge TTS requires async
@@ -292,7 +299,7 @@ class OpenAITTSProvider(TTSProvider):
     def synthesize(self, text: str, output_path: Optional[str] = None) -> str:
         """Synthesize speech using OpenAI TTS."""
         if output_path is None:
-            output_path = os.path.join(tempfile.gettempdir(), f"tts_{os.getpid()}.mp3")
+            output_path = os.path.join(tempfile.gettempdir(), f"tts_{uuid.uuid4().hex}.mp3")
 
         try:
             response = self.client.audio.speech.create(
@@ -321,7 +328,7 @@ class GTTSProvider(TTSProvider):
         """Synthesize speech using gTTS."""
 
         if output_path is None:
-            output_path = os.path.join(tempfile.gettempdir(), f"tts_{os.getpid()}.mp3")
+            output_path = os.path.join(tempfile.gettempdir(), f"tts_{uuid.uuid4().hex}.mp3")
 
         try:
             tts = gTTS(text=text, lang=self.language)
